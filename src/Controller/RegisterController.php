@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Repository\UserRepository;
+use App\Service\EmpresaNotifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -19,6 +20,7 @@ class RegisterController extends AbstractController
         UserPasswordHasherInterface $hasher,
         EntityManagerInterface $em,
         UserRepository $users,
+        EmpresaNotifier $notifier,
     ): JsonResponse {
         $data = json_decode($request->getContent(), true);
 
@@ -47,6 +49,9 @@ class RegisterController extends AbstractController
 
         $em->persist($user);
         $em->flush();
+
+        // Aviso a la empresa (si falla, se registra en el log y el registro se mantiene)
+        $notifier->usuarioNuevo($user);
 
         return $this->json(['message' => 'Usuario creado'], 201);
     }

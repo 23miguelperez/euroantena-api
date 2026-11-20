@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Cita;
 use App\Entity\User;
 use App\Repository\CitaRepository;
+use App\Service\EmpresaNotifier;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -24,6 +25,7 @@ class CitaController extends AbstractController
     public function __construct(
         private CitaRepository $citas,
         private EntityManagerInterface $em,
+        private EmpresaNotifier $notifier,
     ) {
     }
 
@@ -163,6 +165,9 @@ class CitaController extends AbstractController
         } catch (UniqueConstraintViolationException) {
             return $this->json(['error' => 'Ya tienes otra cita a esa hora'], 409);
         }
+
+        // Aviso a la empresa (si falla, se registra en el log y la cita se mantiene)
+        $this->notifier->citaNueva($cita);
 
         return $this->json($this->citaToArray($cita), 201);
     }
